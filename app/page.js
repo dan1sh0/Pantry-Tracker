@@ -77,6 +77,9 @@ export default function Home() {
           flexDirection="column"
           gap={3}
         >
+          <Box width="100%" mb={2}>
+        <a href="/api/auth/login">Login</a>
+      </Box>
           <Typography variant="h6">Add Item</Typography>
           <Stack width="100%" direction="row" spacing={2}>
             <TextField
