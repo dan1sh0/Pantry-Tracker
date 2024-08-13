@@ -1,144 +1,33 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { firestore } from '@/firebase';
-import { Typography, Box, Modal, Stack, TextField, Button } from '@mui/material';
-import { collection, getDocs, doc, deleteDoc, query, getDoc, setDoc } from 'firebase/firestore';
+import { Box, Typography, Button } from '@mui/material';
+import { useUser } from '@auth0/nextjs-auth0/client';
 
 export default function Home() {
-  const [inventory, setInventory] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [itemName, setItemName] = useState('');
+  const { user, isLoading } = useUser();
 
-  const updateInventory = async () => {
-    const snapshot = query(collection(firestore, 'pantry'));
-    const docs = await getDocs(snapshot);
-    const inventoryList = [];
-
-    docs.forEach((doc) => {
-      inventoryList.push({
-        name: doc.id,
-        ...doc.data(),
-      });
-    });
-
-    setInventory(inventoryList);
+  const handleLogin = () => {
+    window.location.href = '/api/auth/login?returnTo=/me';
   };
 
-  const removeItem = async (item) => {
-    const docRef = doc(collection(firestore, 'pantry'), item);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const { count } = docSnap.data();
-      if (count === 1) {
-        await deleteDoc(docRef);
-      } else {
-        await setDoc(docRef, { count: count - 1 });
-      }
-    }
-
-    await updateInventory();
+  const handleLogout = () => {
+    window.location.href = '/api/auth/logout?returnTo=/';
   };
 
-  const addItem = async (item) => {
-    const docRef = doc(collection(firestore, 'pantry'), item);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const { count } = docSnap.data();
-      await setDoc(docRef, { count: count + 1 });
-    } else {
-      await setDoc(docRef, { count: 1 });
-    }
-
-    await updateInventory();
-  };
-
-  useEffect(() => {
-    updateInventory();
-  }, []);
-
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  if (isLoading) return <div>Loading...</div>;
 
   return (
-    <Box width="100vw" height="100vh" display="flex" justifyContent="center" alignItems="center" gap={2}>
-      <Modal open={open} onClose={handleClose}>
-        <Box
-          position="absolute"
-          top="50%"
-          left="50%"
-          sx={{ transform: 'translate(-50%, -50%)' }}
-          width={400}
-          bgcolor="white"
-          border="2px solid #000"
-          p={4}
-          display="flex"
-          flexDirection="column"
-          gap={3}
-        >
-          <Box width="100%" mb={2}>
-        <a href="/api/auth/login">Login</a>
-      </Box>
-          <Typography variant="h6">Add Item</Typography>
-          <Stack width="100%" direction="row" spacing={2}>
-            <TextField
-              variant="outlined"
-              fullWidth
-              value={itemName}
-              onChange={(e) => {
-                setItemName(e.target.value);
-              }}
-            />
-            <Button
-              variant="outlined"
-              onClick={() => {
-                addItem(itemName);
-                setItemName('');
-                handleClose();
-              }}
-            >
-              Add
-            </Button>
-          </Stack>
-        </Box>
-      </Modal>
-      <Button variant="contained" onClick={handleOpen}>
-        Add New Item
+    <Box width="100vw" height="100vh" display="flex" flexDirection="column" justifyContent="center" alignItems="center" gap={2}>
+      <Typography variant="h3">
+        {user ? `Welcome, ${user.name}` : 'Welcome to the Pantry Tracker'}
+      </Typography>
+      <Button
+        variant="contained"
+        onClick={user ? handleLogout : handleLogin}
+      >
+        {user ? 'Logout' : 'Login'}
       </Button>
-      <Box border="1px solid #333" p={2}>
-        <Typography variant="h4" color="#333">
-          Pantry Items
-        </Typography>
-        <Stack width="100%" height="300px" spacing={2} overflow="auto">
-          {inventory.map(({ name, count }) => (
-            <Box
-              key={name}
-              width="100%"
-              minHeight="150px"
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-              bgcolor="#f0f0f0"
-              p={2}
-            >
-              <Typography variant="h5" color="#333" textAlign="center">
-                {name.charAt(0).toUpperCase() + name.slice(1)}
-              </Typography>
-              <Typography variant="h5" color="#333" textAlign="center">
-                {count}
-              </Typography>
-              <Stack direction = "row" spacing = {2} >
-                <Button variant = "contained" onClick={() => 
-                addItem(name)}> Add </Button>
-                <Button variant = "contained" onClick={() => 
-                removeItem(name)}> Remove </Button>
-                
-              </Stack>
-            </Box>
-          ))}
-        </Stack>
-      </Box>
     </Box>
   );
 }
+
+
