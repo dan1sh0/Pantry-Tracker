@@ -11,6 +11,8 @@ import Menu from '@mui/material/Menu';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import SearchIcon from '@mui/icons-material/Search';
 import MoreIcon from '@mui/icons-material/MoreVert';
+import Avatar from '@mui/material/Avatar'; // for user image 
+
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -179,8 +181,14 @@ export default function PrimarySearchAppBar({ user,onSearch, onLogout }) {
               onClick={handleProfileMenuOpen}
               color="inherit"
             >
-              <AccountCircle />
+                
+             {user?.picture ? (
+                <Avatar src={user.picture} alt={user.name} />
+              ) : (
+                <AccountCircle />
+              )} 
             </IconButton>
+          
           </Box>
           <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
             <IconButton

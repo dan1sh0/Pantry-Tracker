@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { firestore } from '@/firebase';
-import { Typography, Box, Modal, Stack, TextField, Button, Paper } from '@mui/material';
+import { Typography, Box, Modal, Stack, TextField, Button, Paper, Select, MenuItem } from '@mui/material';
 import { collection, getDocs, doc, deleteDoc, query, getDoc, setDoc } from 'firebase/firestore';
 import ResponsiveAppBar from './appBar';  // Import ResponsiveAppBar
 import { useUser } from '@auth0/nextjs-auth0/client';
@@ -12,6 +12,9 @@ export default function Home() {
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState('');
   const { user, isLoading } = useUser(); // Get user info
+  const [category, setCategory] = useState(' ')
+  const categories = ["Dairy", "Grains", "Vegetables", "Fruits", "Meat", "Beverages", "Miscellaneous"];
+
 
   const updateInventory = async () => {
     const snapshot = query(collection(firestore, 'pantry'));
@@ -45,15 +48,15 @@ export default function Home() {
     await updateInventory();
   };
 
-  const addItem = async (item) => {
+  const addItem = async (item, category) => {
     const docRef = doc(collection(firestore, 'pantry'), item);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
       const { count } = docSnap.data();
-      await setDoc(docRef, { count: count + 1 });
+      await setDoc(docRef, { count: count + 1 , category});
     } else {
-      await setDoc(docRef, { count: 1 });
+      await setDoc(docRef, { count: 1 , category});
     }
 
     await updateInventory();
@@ -95,7 +98,7 @@ export default function Home() {
             Pantry Items
           </Typography>
           <Stack spacing={2}>
-            {filtered.map(({ name, count }) => (
+            {filtered.map(({ name, count, category }) => (
               <Box
                 key={name}
                 display="flex"
@@ -105,15 +108,17 @@ export default function Home() {
                 sx={{ backgroundColor: '#f0f0f0', borderRadius: 1 }}
               >
                 <Typography variant="h6" color="#333" textAlign="center">
-                  {name.charAt(0).toUpperCase() + name.slice(1)}
+                  {name.charAt(0).toUpperCase() + name.slice(1)} - {category}
                 </Typography>
                 <Typography variant="h6" color="#333" textAlign="center">
                   {count}
                 </Typography>
                 <Stack direction="row" spacing={2}>
-                  <Button variant="contained" onClick={() => addItem(name)}>
-                    Add
-                  </Button>
+                <Button variant="contained" onClick={() => addItem(name)}>
+                
+                  Add
+                </Button>
+
                   <Button variant="contained" onClick={() => removeItem(name)}>
                     Remove
                   </Button>
@@ -148,6 +153,7 @@ export default function Home() {
             <Typography variant="h6">Add Item</Typography>
             <Stack width="100%" direction="row" spacing={2}>
               <TextField
+                label = "item"
                 variant="outlined"
                 fullWidth
                 value={itemName}
@@ -155,10 +161,23 @@ export default function Home() {
                   setItemName(e.target.value);
                 }}
               />
+              <Select
+                label="Category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)} // Handles the user's selection
+                fullWidth
+                variant="outlined"
+              >
+                {categories.map((cat) => (
+                <MenuItem key={cat} value={cat}>
+                      {cat}
+                </MenuItem>
+              ))}
+              </Select>
               <Button
                 variant="outlined"
                 onClick={() => {
-                  addItem(itemName);
+                  addItem(itemName, category);
                   setItemName('');
                   handleClose();
                 }}
